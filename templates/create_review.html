@@ -109,16 +109,16 @@
         .rating-input label {
             font-size: 2rem;
             cursor: pointer;
-            transition: transform 0.2s;
-            color: #ddd;  /* Gris por defecto */
+            transition: transform 0.2s, color 0.2s;
+            color: #ddd;
+        }
+
+        .rating-input label.active {
+            color: #ffa500 !important;
         }
 
         .rating-input label:hover {
-            transform: scale(1.2);
-        }
-
-        .rating-input input[type="radio"]:checked + label {
-            color: #ffa500;
+            transform: scale(1.1);
         }
 
         .submit-btn {
@@ -217,19 +217,19 @@
                     <label>Valoración (1-5 puntos) *</label>
                     <div class="rating-input">
                         <input type="radio" id="rating1" name="rating" value="1">
-                        <label for="rating1">⭐</label>
+                        <label for="rating1">★</label>
                         
                         <input type="radio" id="rating2" name="rating" value="2">
-                        <label for="rating2">⭐</label>
+                        <label for="rating2">★</label>
                         
                         <input type="radio" id="rating3" name="rating" value="3" checked>
-                        <label for="rating3">⭐</label>
+                        <label for="rating3">★</label>
                         
                         <input type="radio" id="rating4" name="rating" value="4">
-                        <label for="rating4">⭐</label>
+                        <label for="rating4">★</label>
                         
                         <input type="radio" id="rating5" name="rating" value="5">
-                        <label for="rating5">⭐</label>
+                        <label for="rating5">★</label>
                     </div>
                 </div>
 
@@ -247,39 +247,40 @@
     </div>
 
     <script>
-        // Actualizar visualización de estrellas al seleccionar
+        // Actualizar visualización de estrellas
         const ratingInputs = document.querySelectorAll('.rating-input input[type="radio"]');
         const ratingLabels = document.querySelectorAll('.rating-input label');
 
         function updateStars(selectedValue) {
             ratingLabels.forEach((label, labelIndex) => {
-                // labelIndex va de 0 a 4, selectedValue va de 1 a 5
+                label.style.transform = 'scale(1)';
+                
                 if (labelIndex < selectedValue) {
-                    label.style.color = '#ffa500';
+                    label.classList.add('active');
                 } else {
-                    label.style.color = '#ddd';
+                    label.classList.remove('active');
                 }
             });
         }
 
-        // Evento change en los inputs
-        ratingInputs.forEach((input) => {
-            input.addEventListener('change', () => {
-                const value = parseInt(input.value);
-                updateStars(value);
-            });
-        });
-
-        // Evento click directo en los labels para feedback inmediato
+        // Evento click en las estrellas
         ratingLabels.forEach((label, index) => {
             label.addEventListener('click', () => {
-                const value = index + 1; // index 0-4 -> value 1-5
-                updateStars(value);
+                updateStars(index + 1);
             });
         });
 
-        // Inicializar estrellas con valor por defecto (3)
-        updateStars(3);
+        // Evento change en los radio buttons
+        ratingInputs.forEach((input) => {
+            input.addEventListener('change', () => {
+                updateStars(parseInt(input.value));
+            });
+        });
+
+        // Inicializar con 3 estrellas por defecto
+        setTimeout(() => {
+            updateStars(3);
+        }, 100);
 
         // Manejar el envío del formulario
         document.getElementById('review-form').addEventListener('submit', async (e) => {
