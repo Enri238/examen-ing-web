@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReViews - Todas las reseñas</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        #map {
+            height: 500px;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .search-form input {
+            flex: 1;
+            padding: 0.7rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .search-form button {
+            padding: 0.7rem 1.5rem;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .search-form button:hover {
+            background: #5568d3;
+        }
+
+        .reviews-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .review-card {
+            background: #f9f9f9;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .review-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .review-card h3 {
+            color: #333;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .review-card .address {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .review-card .coords {
+            color: #999;
+            font-size: 0.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .rating {
+            color: #ffa500;
+            font-size: 1.2rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .container {
+                margin: 1rem auto;
+            }
+
+            #map {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>⭐ ReViews</h1>
+        <div class="user-info">
+            <span>{{ user.name }}</span>
+            <a href="{{ url_for('create_review') }}" class="btn">+ Crear reseña</a>
+            <a href="{{ url_for('logout') }}" class="btn" style="background: #e74c3c; color: white;">Salir</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="section">
+            <h2>📋 Listado de reseñas</h2>
+            <div class="reviews-list" id="reviews-list">
+                <p style="text-align: center; color: #999;">Cargando reseñas...</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🗺️ Mapa de establecimientos</h2>
+            <div id="map"></div>
+            <div class="search-form">
+                <input type="text" id="search-address" placeholder="Buscar dirección postal...">
+                <button onclick="searchAddress()">🔍 Buscar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Inicializar el mapa
+        const map = L.map('map', {
+            maxBounds: [[-90, -180], [90, 180]],
+            maxBoundsViscosity: 1.0,
+            worldCopyJump: false,
+            noWrap: true
+        }).setView([36.7213, -4.4214], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            noWrap: true
+        }).addTo(map);
+
+        const markers = [];
+        let searchMarker = null;  // Referencia al marcador de búsqueda
+
+        // Cargar reseñas
+        async function loadReviews() {
+            try {
+                const response = await fetch('/api/reviews');
+                const reviews = await response.json();
+
+                const reviewsList = document.getElementById('reviews-list');
+                
+                if (reviews.length === 0) {
+                    reviewsList.innerHTML = '<p style="text-align: center; color: #999;">No hay reseñas todavía</p>';
+                    return;
+                }
+
+                reviewsList.innerHTML = '';
+
+                reviews.forEach(review => {
+                    // Añadir al listado
+                    const card = document.createElement('div');
+                    card.className = 'review-card';
+                    card.onclick = () => window.location.href = `/review/${review.id}`;
+                    
+                    const stars = '⭐'.repeat(review.rating);
+                    
+                    card.innerHTML = `
+                        <h3>${review.establishment_name}</h3>
+                        <div class="address">📍 ${review.address}</div>
+                        <div class="coords">Coordenadas: ${review.latitude.toFixed(6)}, ${review.longitude.toFixed(6)}</div>
+                        <div class="rating">${stars} (${review.rating}/5)</div>
+                    `;
+                    reviewsList.appendChild(card);
+
+                    // Añadir marcador al mapa
+                    const marker = L.marker([review.latitude, review.longitude]).addTo(map);
+                    marker.bindPopup(`
+                        <b>${review.establishment_name}</b><br>
+                        ${review.address}<br>
+                        ${stars} (${review.rating}/5)
+                    `);
+                    markers.push(marker);
+                });
+
+                // Ajustar vista del mapa a todos los marcadores
+                if (markers.length > 0) {
+                    const group = new L.featureGroup(markers);
+                    map.fitBounds(group.getBounds().pad(0.1));
+                }
+            } catch (error) {
+                console.error('Error al cargar reseñas:', error);
+                document.getElementById('reviews-list').innerHTML = '<p style="text-align: center; color: #e74c3c;">Error al cargar reseñas</p>';
+            }
+        }
+
+        // Buscar dirección
+        async function searchAddress() {
+            const address = document.getElementById('search-address').value;
+            if (!address) {
+                alert('Por favor, introduce una dirección');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/geocode?address=${encodeURIComponent(address)}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    alert('Dirección no encontrada');
+                    return;
+                }
+
+                map.setView([data.latitude, data.longitude], 15);
+                
+                // Eliminar marcador anterior si existe
+                if (searchMarker) {
+                    map.removeLayer(searchMarker);
+                }
+                
+                // Crear nuevo marcador de búsqueda
+                searchMarker = L.marker([data.latitude, data.longitude], {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(map);
+                
+                searchMarker.bindPopup(`<b>Búsqueda:</b><br>${data.display_name}`).openPopup();
+            } catch (error) {
+                console.error('Error al buscar dirección:', error);
+                alert('Error al buscar dirección');
+            }
+        }
+
+        // Cargar reseñas al iniciar
+        loadReviews();
+    </script>
+</body>
+</html>

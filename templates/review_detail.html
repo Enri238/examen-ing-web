@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReViews - Detalle de reseña</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .detail-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        .detail-card h2 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .rating {
+            color: #ffa500;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .info-section {
+            margin-bottom: 2rem;
+        }
+
+        .info-section h3 {
+            color: #667eea;
+            margin-bottom: 0.5rem;
+            font-size: 1.2rem;
+        }
+
+        .info-section p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .token-box {
+            background: #f9f9f9;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 0.85rem;
+            color: #333;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .images-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .images-gallery img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+
+        .images-gallery img:hover {
+            transform: scale(1.05);
+        }
+
+        .no-images {
+            color: #999;
+            font-style: italic;
+        }
+
+        .timestamp {
+            font-size: 0.9rem;
+            color: #999;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .detail-card {
+                padding: 1.5rem;
+            }
+
+            .detail-card h2 {
+                font-size: 1.5rem;
+            }
+
+            .images-gallery {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>⭐ ReViews</h1>
+        <div>
+            <a href="{{ url_for('reviews') }}" class="btn">← Volver a reseñas</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="detail-card">
+            <h2>{{ review.establishment_name }}</h2>
+            <div class="rating">{{ '⭐' * review.rating }} ({{ review.rating }}/5)</div>
+
+            <div class="info-section">
+                <h3>📍 Ubicación</h3>
+                <p><span class="info-label">Dirección:</span> {{ review.address }}</p>
+                <p><span class="info-label">Coordenadas GPS:</span> {{ "%.6f"|format(review.longitude) }}, {{ "%.6f"|format(review.latitude) }}</p>
+            </div>
+
+            <div class="info-section">
+                <h3>👤 Autor de la reseña</h3>
+                <p><span class="info-label">Nombre:</span> {{ review.author_name }}</p>
+                <p><span class="info-label">Email:</span> {{ review.author_email }}</p>
+            </div>
+
+            <div class="info-section">
+                <h3>🔑 Información del token OAuth</h3>
+                <p><span class="info-label">Fecha de emisión:</span> 
+                    <span class="timestamp">{{ review.token_issued_at|int|timestamp_to_date }}</span>
+                </p>
+                <p><span class="info-label">Fecha de caducidad:</span> 
+                    <span class="timestamp">{{ review.token_expires_at|int|timestamp_to_date }}</span>
+                </p>
+                <p style="margin-top: 1rem;"><span class="info-label">Token de identificación:</span></p>
+                <div class="token-box">{{ review.token }}</div>
+            </div>
+
+            <div class="info-section">
+                <h3>🖼️ Imágenes del establecimiento</h3>
+                {% if review.images and review.images|length > 0 %}
+                    <div class="images-gallery">
+                        {% for image_url in review.images %}
+                            <img src="{{ image_url }}" alt="Imagen del establecimiento" onclick="window.open('{{ image_url }}', '_blank')">
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="no-images">No hay imágenes para esta reseña</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

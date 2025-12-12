@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReViews - Crear reseña</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .form-card h2 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group input[type="file"] {
+            padding: 0.5rem;
+        }
+
+        .rating-input {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .rating-input input[type="radio"] {
+            display: none;
+        }
+
+        .rating-input label {
+            font-size: 2rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+            color: #ddd;  /* Gris por defecto */
+        }
+
+        .rating-input label:hover {
+            transform: scale(1.2);
+        }
+
+        .rating-input input[type="radio"]:checked + label {
+            color: #ffa500;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success {
+            background: #efe;
+            color: #3c3;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .form-card {
+                padding: 1.5rem;
+            }
+
+            .form-card h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>⭐ ReViews</h1>
+        <div>
+            <a href="{{ url_for('reviews') }}" class="btn">← Volver a reseñas</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="form-card">
+            <h2>✍️ Crear nueva reseña</h2>
+            
+            <div class="error" id="error-message"></div>
+            <div class="success" id="success-message"></div>
+
+            <form id="review-form" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="establishment_name">Nombre del establecimiento *</label>
+                    <input type="text" id="establishment_name" name="establishment_name" required placeholder="Ej. Casa Lola">
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Dirección postal *</label>
+                    <input type="text" id="address" name="address" required placeholder="Ej. Calle Granada 46, Málaga">
+                </div>
+
+                <div class="form-group">
+                    <label>Valoración (1-5 puntos) *</label>
+                    <div class="rating-input">
+                        <input type="radio" id="rating1" name="rating" value="1">
+                        <label for="rating1">⭐</label>
+                        
+                        <input type="radio" id="rating2" name="rating" value="2">
+                        <label for="rating2">⭐</label>
+                        
+                        <input type="radio" id="rating3" name="rating" value="3" checked>
+                        <label for="rating3">⭐</label>
+                        
+                        <input type="radio" id="rating4" name="rating" value="4">
+                        <label for="rating4">⭐</label>
+                        
+                        <input type="radio" id="rating5" name="rating" value="5">
+                        <label for="rating5">⭐</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="images">Imágenes (opcional, puedes seleccionar varias)</label>
+                    <input type="file" id="images" name="images" accept="image/*" multiple>
+                </div>
+
+                <button type="submit" class="submit-btn" id="submit-btn">🚀 Crear reseña</button>
+                <div class="loading" id="loading">
+                    Creando reseña, por favor espera...
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Actualizar visualización de estrellas al seleccionar
+        const ratingInputs = document.querySelectorAll('.rating-input input[type="radio"]');
+        const ratingLabels = document.querySelectorAll('.rating-input label');
+
+        function updateStars(selectedValue) {
+            ratingLabels.forEach((label, labelIndex) => {
+                // labelIndex va de 0 a 4, selectedValue va de 1 a 5
+                if (labelIndex < selectedValue) {
+                    label.style.color = '#ffa500';
+                } else {
+                    label.style.color = '#ddd';
+                }
+            });
+        }
+
+        // Evento change en los inputs
+        ratingInputs.forEach((input) => {
+            input.addEventListener('change', () => {
+                const value = parseInt(input.value);
+                updateStars(value);
+            });
+        });
+
+        // Evento click directo en los labels para feedback inmediato
+        ratingLabels.forEach((label, index) => {
+            label.addEventListener('click', () => {
+                const value = index + 1; // index 0-4 -> value 1-5
+                updateStars(value);
+            });
+        });
+
+        // Inicializar estrellas con valor por defecto (3)
+        updateStars(3);
+
+        // Manejar el envío del formulario
+        document.getElementById('review-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submit-btn');
+            const loading = document.getElementById('loading');
+            const errorMsg = document.getElementById('error-message');
+            const successMsg = document.getElementById('success-message');
+
+            // Ocultar mensajes previos
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+
+            // Deshabilitar botón y mostrar loading
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+
+            try {
+                const formData = new FormData(e.target);
+
+                const response = await fetch('/api/reviews', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    successMsg.textContent = '¡Reseña creada con éxito!';
+                    successMsg.style.display = 'block';
+                    
+                    // Redirigir a la página de reseñas después de 2 segundos
+                    setTimeout(() => {
+                        window.location.href = '/reviews';
+                    }, 2000);
+                } else {
+                    throw new Error(data.error || 'Error al crear la reseña');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                errorMsg.textContent = error.message;
+                errorMsg.style.display = 'block';
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
